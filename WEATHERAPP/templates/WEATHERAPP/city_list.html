@@ -1,0 +1,198 @@
+{% extends 'WEATHERAPP/base.html' %}
+
+{% block title %}All Cities{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <h1 class="mb-4">All Tracked Cities</h1>
+        
+        {% if cities %}
+            <div class="weather-card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>City</th>
+                                    <th>Country</th>
+                                    <th>Coordinates</th>
+                                    <th>Added On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for city in cities %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'weather_city_detail' city.id %}" class="text-decoration-none">
+                                            {{ city.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ city.country }}</td>
+                                    <td>
+                                        {% if city.latitude and city.longitude %}
+                                            {{ city.latitude|floatformat:2 }}, {{ city.longitude|floatformat:2 }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ city.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'weather_city_detail' city.id %}" class="btn btn-sm btn-primary">View</a>
+                                        <a href="{% url 'weather_refresh' city.id %}" class="btn btn-sm btn-info">Refresh</a>
+                                        <form method="post" action="{% url 'weather_city_delete' city.id %}" style="display:inline;" onsubmit="return confirm('Delete this city?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <strong>No cities found!</strong> Go to the <a href="{% url 'weather_index' %}" class="alert-link">home page</a> to add cities.
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'weather_index' %}" class="btn btn-secondary mt-3">← Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach((row, index) => {
+            row.style.animation = `fadeInUp 0.5s ease-out ${index * 0.06}s both`;
+            
+            // Add interactive effects
+            row.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.005) translateX(5px)';
+                this.style.boxShadow = '0 6px 15px rgba(102, 126, 234, 0.3)';
+                this.style.backgroundColor = 'rgba(102, 126, 234, 0.08)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+                this.style.backgroundColor = 'transparent';
+            });
+
+            // Animate buttons in row
+            const buttons = row.querySelectorAll('button, a.btn');
+            buttons.forEach(btn => {
+                btn.style.transition = 'all 0.3s ease';
+            });
+        });
+
+        // Delete button special effect
+        const deleteButtons = document.querySelectorAll('button[type="submit"]');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.animation = 'heartBeat 0.5s ease-out';
+            });
+        });
+
+        // Link animations
+        const links = document.querySelectorAll('a.text-decoration-none');
+        links.forEach(link => {
+            link.style.position = 'relative';
+            link.addEventListener('mouseenter', function() {
+                this.style.color = '#667eea';
+            });
+            link.addEventListener('mouseleave', function() {
+                this.style.color = 'inherit';
+            });
+        });
+
+        // Title animation
+        const title = document.querySelector('h1');
+        if (title) {
+            title.style.animation = 'wobble 0.8s ease-in-out';
+        }
+
+        // Card animation
+        const card = document.querySelector('.weather-card');
+        if (card) {
+            card.style.animation = 'fadeInUp 0.6s ease-out';
+        }
+    });
+</script>
+
+<style>
+    /* Row animations */
+    table tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    /* Cell animations */
+    table td {
+        transition: all 0.3s ease;
+    }
+
+    /* Link animation */
+    a.text-decoration-none {
+        transition: all 0.3s ease;
+        font-weight: 500;
+        color: #333;
+    }
+
+    a.text-decoration-none:hover {
+        text-decoration: underline;
+    }
+
+    /* Form button animation */
+    form {
+        display: inline !important;
+    }
+
+    button[type="submit"] {
+        transition: all 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+        transform: scale(1.05);
+    }
+
+    button[type="submit"]:active {
+        transform: scale(0.95);
+    }
+</style>
+{% endblock %}

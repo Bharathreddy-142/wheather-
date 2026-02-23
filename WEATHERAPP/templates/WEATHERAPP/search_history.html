@@ -1,0 +1,169 @@
+{% extends 'WEATHERAPP/base.html' %}
+{% load weather_filters %}
+
+{% block title %}Search History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Search History</h1>
+            <a href="{% url 'weather_index' %}" class="btn btn-primary">🏠 Home</a>
+        </div>
+        
+        {% if search_records %}
+            <div class="weather-card">
+                <div class="card-body">
+                    <p class="text-muted">Total searches: <strong>{{ paginator.count }}</strong></p>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>City</th>
+                                    <th>Country</th>
+                                    <th>Last Searched</th>
+                                    <th>Coordinates</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in search_records %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ record.city.name }}</strong>
+                                    </td>
+                                    <td>{{ record.city.country }}</td>
+                                    <td>
+                                        <small class="text-muted">{{ record.searched_at|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if record.city.latitude and record.city.longitude %}
+                                            {{ record.city.latitude|floatformat:2 }}, {{ record.city.longitude|floatformat:2 }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'weather_city_detail' record.city.id %}" class="btn btn-sm btn-primary">View Weather</a>
+                                        <a href="{% url 'weather_refresh' record.city.id %}" class="btn btn-sm btn-info">Refresh</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <strong>No search history yet!</strong> Go to the <a href="{% url 'weather_index' %}" class="alert-link">home page</a> and search for a city.
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'weather_index' %}" class="btn btn-secondary mt-3">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach((row, index) => {
+            row.style.animation = `fadeInUp 0.5s ease-out ${index * 0.05}s both`;
+            
+            // Add hover effect
+            row.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.01)';
+                this.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+            });
+        });
+
+        // Animate pagination buttons
+        const paginationItems = document.querySelectorAll('.pagination .page-item');
+        paginationItems.forEach((item, index) => {
+            item.style.animation = `popIn 0.4s ease-out ${0.5 + index * 0.05}s both`;
+        });
+
+        // Table header animation
+        const tableHeader = document.querySelector('table thead');
+        if (tableHeader) {
+            tableHeader.style.animation = 'fadeInDown 0.5s ease-out';
+        }
+
+        // Animate counter text
+        const counterText = document.querySelector('.text-muted');
+        if (counterText) {
+            counterText.style.animation = 'slideInLeft 0.5s ease-out';
+        }
+    });
+</script>
+
+<style>
+    /* Table row animations */
+    table tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    /* Pagination animations */
+    .pagination .page-link {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+
+    .pagination .page-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+    }
+
+    /* Table responsive */
+    .table-responsive {
+        animation: fadeIn 0.5s ease-out;
+    }
+</style>
+{% endblock %}
